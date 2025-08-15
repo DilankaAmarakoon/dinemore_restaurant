@@ -1,0 +1,38 @@
+{
+  "project_info": {
+    "project_number": "938638699606",
+    "project_id": "advertising-screen-refresh",
+    "storage_bucket": "advertising-screen-refresh.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:938638699606:android:90905b31a077d7cdd35ff7",
+        "android_client_info": {
+          "package_name": "com.example.advertising_screen"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "938638699606-android:com.example.advertising_screen.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.advertising_screen",
+            "certificate_hash": "7d159f41bf4c783a6df2c19462bfdb0e4d2927da"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZrr9BqzTagG857AYxW2dQPSxuc8QNCLk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
