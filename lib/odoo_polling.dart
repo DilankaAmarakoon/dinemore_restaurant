@@ -38,10 +38,11 @@ class OdooPollingService {
     required String password,
     String modelToMonitor = 'restaurant.display.line',
     List<String> fieldsToMonitor = const ['image', 'video', 'duration', 'file_type'],
-    int pollingIntervalSeconds = 120,
+    int pollingIntervalSeconds = 10,
     Function()? onImageUpdate,
     String? deviceId,
-  }) async {
+  }) async
+  {
     if (_isInitialized) {
       debugPrint('🔐 OdooPollingService already initialized');
       return;
@@ -210,38 +211,43 @@ class OdooPollingService {
       domain = [['device_ip', '=', _deviceId]];
     }
 
-    final response = await http.post(
-      Uri.parse('${_odooBaseUrl}web/dataset/call_kw'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'session_id=$_sessionId',
-      },
-      body: jsonEncode({
-        'jsonrpc': '2.0',
-        'method': 'call',
-        'params': {
-          'model': _modelToMonitor,
-          'method': 'search_count',
-          'args': [domain],
-          'kwargs': {},
+    try {
+      final response = await http.post(
+        Uri.parse('${_odooBaseUrl}web/dataset/call_kw'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'session_id=$_sessionId',
         },
-      }),
-    ).timeout(Duration(seconds: 120));
+        body: jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'call',
+          'params': {
+            'model': _modelToMonitor,
+            'method': 'search_count',
+            'args': [domain],
+            'kwargs': {},
+          },
+        }),
+      ).timeout(Duration(seconds: 30)); // Reduced timeout
 
-    debugPrint('📊 Record count response status: ${response.statusCode}');
+      debugPrint('📊 Record count response status: ${response.statusCode}');
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
 
-      if (responseData['result'] != null && responseData['error'] == null) {
-        return responseData['result'] as int;
-      } else {
-        debugPrint('❌ Error in record count response: ${responseData['error']}');
-        throw Exception('Failed to get record count: ${responseData['error']}');
+        if (responseData['result'] != null && responseData['error'] == null) {
+          return responseData['result'] as int;
+        } else {
+          debugPrint('❌ Error in record count response: ${responseData['error']}');
+          throw Exception('Failed to get record count: ${responseData['error']}');
+        }
       }
-    }
 
-    throw Exception('Failed to get record count - HTTP ${response.statusCode}');
+      throw Exception('Failed to get record count - HTTP ${response.statusCode}');
+    } catch (e) {
+      debugPrint('❌ Error getting record count: $e');
+      rethrow;
+    }
   }
 
   Future<void> _saveLastRecordCount() async {
@@ -264,6 +270,8 @@ class OdooPollingService {
     _checkForImageUpdates();
   }
 
+
+// Enhanced _checkForImageUpdates method with better timeout handling
   Future<void> _checkForImageUpdates() async {
     try {
       debugPrint('🔍 Checking for content changes in Odoo...');
@@ -303,88 +311,114 @@ class OdooPollingService {
         debugPrint('⚠️ Error checking record count: $e');
       }
 
-      // Also check for updates using write_date (existing logic)
-      DateTime currentTime = DateTime.now();
-      String lastCheckTimeStr = _lastCheckTime!.toUtc().toIso8601String();
-
-      debugPrint('🔍 Searching for records modified since: $lastCheckTimeStr');
-
-      // Build domain for filtering
-      List<dynamic> domain = [['write_date', '>', lastCheckTimeStr]];
-      if (_deviceId.isNotEmpty) {
-        domain.add(['device_ip', '=', _deviceId]);
+      // If record count changed, skip the detailed search (it's redundant)
+      if (hasChanges) {
+        debugPrint('🔄 Record count changed - skipping detailed search');
+        await _triggerAppRefresh([]);
+        _lastCheckTime = DateTime.now();
+        await _saveLastCheckTime();
+        return;
       }
 
-      List<String> fieldsToFetch = ['id', 'device_ip', 'write_date'] + _fieldsToMonitor;
+      // Only do detailed search if record count is the same
+      try {
+        DateTime currentTime = DateTime.now();
+        String lastCheckTimeStr = _lastCheckTime!.toUtc().toIso8601String();
 
-      final searchResponse = await http.post(
-        Uri.parse('${_odooBaseUrl}web/dataset/call_kw'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': 'session_id=$_sessionId',
-        },
-        body: jsonEncode({
-          'jsonrpc': '2.0',
-          'method': 'call',
-          'params': {
-            'model': _modelToMonitor,
-            'method': 'search_read',
-            'args': [
-              domain,
-              fieldsToFetch,
-            ],
-            'kwargs': {
-              'limit': 100,
-            },
+        debugPrint('🔍 Searching for records modified since: $lastCheckTimeStr');
+
+        // Build domain for filtering
+        List<dynamic> domain = [['write_date', '>', lastCheckTimeStr]];
+        if (_deviceId.isNotEmpty) {
+          domain.add(['device_ip', '=', _deviceId]);
+        }
+
+        // Simplified fields to reduce payload size
+        List<String> fieldsToFetch = ['id', 'write_date'];
+
+        final searchResponse = await http.post(
+          Uri.parse('${_odooBaseUrl}web/dataset/call_kw'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Cookie': 'session_id=$_sessionId',
           },
-        }),
-      ).timeout(Duration(seconds: 120));
+          body: jsonEncode({
+            'jsonrpc': '2.0',
+            'method': 'call',
+            'params': {
+              'model': _modelToMonitor,
+              'method': 'search_read',
+              'args': [
+                domain,
+                fieldsToFetch,
+              ],
+              'kwargs': {
+                'limit': 10, // Reduced from 100 to prevent timeouts
+              },
+            },
+          }),
+        ).timeout(Duration(seconds: 30)); // Reduced timeout to 30 seconds
 
-      debugPrint('🔍 Search response status: ${searchResponse.statusCode}');
+        debugPrint('🔍 Search response status: ${searchResponse.statusCode}');
 
-      if (searchResponse.statusCode == 200) {
-        final responseData = jsonDecode(searchResponse.body);
+        if (searchResponse.statusCode == 200) {
+          final responseData = jsonDecode(searchResponse.body);
 
-        if (responseData['result'] != null) {
-          List<dynamic> updatedRecords = responseData['result'];
-          debugPrint('🔍 Found ${updatedRecords.length} updated records');
+          if (responseData['result'] != null) {
+            List<dynamic> updatedRecords = responseData['result'];
+            debugPrint('🔍 Found ${updatedRecords.length} updated records');
 
-          if (updatedRecords.isNotEmpty) {
-            debugPrint('📝 Records updated since last check');
-            hasChanges = true;
+            if (updatedRecords.isNotEmpty) {
+              debugPrint('🔍 Records updated since last check');
+              hasChanges = true;
 
-            for (var record in updatedRecords) {
-              debugPrint('   - Record ${record['id']}: device_ip ${record['device_ip']} updated');
+              for (var record in updatedRecords) {
+                debugPrint('   - Record ${record['id']} updated');
+              }
+            }
+          } else {
+            debugPrint('❌ Error in Odoo response: ${responseData['error']}');
+            if (responseData['error']?.toString().contains('session') == true) {
+              debugPrint('🔑 Session expired, re-authenticating...');
+              await _authenticateWithOdoo();
             }
           }
         } else {
-          debugPrint('❌ Error in Odoo response: ${responseData['error']}');
-          if (responseData['error']?.toString().contains('session') == true) {
-            debugPrint('🔑 Session expired, re-authenticating...');
-            await _authenticateWithOdoo();
-          }
+          debugPrint('❌ Failed to search Odoo records: ${searchResponse.statusCode}');
         }
-      } else {
-        debugPrint('❌ Failed to search Odoo records: ${searchResponse.statusCode}');
-      }
 
-      // If any changes detected, trigger refresh
-      if (hasChanges) {
-        debugPrint('🔄 Content changes detected - triggering refresh');
-        await _triggerAppRefresh([]);
-      } else {
-        debugPrint('✅ No content changes detected');
-      }
+        // If any changes detected, trigger refresh
+        if (hasChanges) {
+          debugPrint('🔄 Content changes detected - triggering refresh');
+          await _triggerAppRefresh([]);
+        } else {
+          debugPrint('✅ No content changes detected');
+        }
 
-      // Update last check time
-      _lastCheckTime = currentTime;
-      await _saveLastCheckTime();
+        // Update last check time
+        _lastCheckTime = currentTime;
+        await _saveLastCheckTime();
+
+      } catch (e) {
+        debugPrint('⚠️ Error in detailed search (will retry next cycle): $e');
+
+        // Don't update last check time if search failed
+        // This ensures we'll try again next cycle
+
+        // But do update the check time partially to prevent infinite retries of old data
+        if (_lastCheckTime != null) {
+          _lastCheckTime = _lastCheckTime!.add(Duration(minutes: 1));
+          await _saveLastCheckTime();
+          debugPrint('⏰ Advanced check time by 1 minute to prevent stuck state');
+        }
+      }
 
     } catch (e) {
       debugPrint('❌ Error checking for image updates: $e');
       // Don't rethrow - just log and continue polling
     }
   }
+
   Future<void> _triggerAppRefresh(List<Map<String, dynamic>> updatedRecords) async {
     try {
       debugPrint('🔄 Triggering app refresh due to content changes');
@@ -492,3 +526,4 @@ class OdooPollingService {
   DateTime? get lastCheckTime => _lastCheckTime;
   int get pollingIntervalSeconds => _pollingIntervalSeconds;
 }
+

@@ -10,17 +10,52 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.gamepad"
+        android:required="false" />
     <application
+        android:enableOnBackInvokedCallback="true"
         android:label="Restaurant Display"
         android:icon="@mipmap/ic_launcher"
-        android:hardwareAccelerated="true"
+        android:largeHeap="true"
+        android:allowBackup="false"
+        android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
         android:name="${applicationName}">
+        android:usesCleartextTraffic="true"
+        android:hardwareAccelerated="true"
+        android:enableImpeller="false"
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+        <meta-data android:name="flutterEmbedding" android:value="2" />
+        <meta-data
+            android:name="io.flutter.embedding.android.NormalTheme"
+            android:resource="@style/NormalTheme" />
+        <meta-data
+            android:name="io.flutter.embedding.android.SplashScreenDrawable"
+            android:resource="@drawable/launch_background" />
 
         <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
+            android:hardwareAccelerated="true"
+            android:largeHeap="true"
             android:exported="true"
+
             android:launchMode="singleTask"
             android:screenOrientation="landscape"
             android:theme="@style/LaunchTheme">
@@ -37,6 +72,14 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.HOME"/>
                 <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
 
         </activity>
@@ -59,7 +102,6 @@
             </intent-filter>
         </receiver>
         <!-- Flutter Metadata -->
-        <meta-data android:name="flutterEmbedding" android:value="2" />
         <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false">

@@ -10,7 +10,8 @@ plugins {
 
 android {
     namespace = "com.example.advertising_screen"
-    compileSdkVersion(rootProject.extra["compileSdkVersion"] as Int)
+//    compileSdkVersion(rootProject.extra["compileSdkVersion"] as Int)
+    compileSdk = rootProject.extra["compileSdkVersion"] as Int
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -28,6 +29,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["enableImpeller"] = "false"
     }
 
     buildTypes {

@@ -14,14 +14,12 @@ class TvViewModels {
   final Uint8List imageByte;
   final double duration;
   final MediaType type;
-  final Uri videoUrl;
 
   TvViewModels({
     required this.deviceId,
     required this.imageByte,
     required this.duration,
     required this.type,
-    required this.videoUrl
   });
 }
 
@@ -61,7 +59,7 @@ class TvViewModelsData{
     // const password = 'portal';
 
     try {
-      final productData = await xml_rpc.call(Uri.parse("https://$url/xmlrpc/2/object"),
+      final productData = await xml_rpc.call(Uri.parse("$url/xmlrpc/2/object"),
         'execute_kw',
         [dbName, 2, password, 'restaurant.display.line', 'search_read', [[['device_ip', '=', 34343434]]],],
       );
@@ -89,7 +87,7 @@ class TvViewModelsData{
             imageByte: bytes,
             duration: item["duration"],
             type: item["file_type"] == "video" ? MediaType.video :MediaType.image,
-            videoUrl: Uri.parse("https://drive.google.com/uc?export=download&id=$urlId")
+
         ));
       } catch (e) {
         print("Base64 decode failed: $e");

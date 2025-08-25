@@ -2,18 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xml_rpc/client_c.dart' as xml_rpc;
 
+import '../constant/staticData.dart';
+
 class AuthProvider with ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Hardcoded configuration for restaurant - FIXED URL FORMAT
-  static const String _baseUrl = "dinemorego-uat-22681767.dev.odoo.com"; // No https here
-  static const String _database = "dinemorego-uat-22681767";
-
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+
+  String _orientationMode = "landscape";
+  String? get orientationMode => _orientationMode;
+
+
+  void setOrientationMode(String value) {
+    _orientationMode = value;
+      notifyListeners();
+  }
+
 
   AuthProvider() {
     _checkAuthStatus();
@@ -41,6 +49,7 @@ class AuthProvider with ChangeNotifier {
 
     try {
       // Authenticate with Odoo
+      print("rtttttyyyyyyggg");
       final userId = await _authenticateWithOdoo(username, password);
 
       if (userId > 0) {
@@ -50,6 +59,7 @@ class AuthProvider with ChangeNotifier {
         if (hasContent) {
           await _saveAuthData(userId, username, password,macAddress);
           _isAuthenticated = true;
+          print("555555");
           _isLoading = false;
           notifyListeners();
           return true;
@@ -73,9 +83,9 @@ class AuthProvider with ChangeNotifier {
     try {
       // FIXED: Use consistent URL format
       final userId = await xml_rpc.call(
-        Uri.parse('https://$_baseUrl/xmlrpc/2/common'),
+        Uri.parse('${baseUrl}xmlrpc/2/common'),
         'login',
-        [_database, username, password],
+        [dbName, username, password],
       );
 
       debugPrint("Authentication response: $userId");
@@ -94,10 +104,10 @@ class AuthProvider with ChangeNotifier {
   Future<bool> _verifyDeviceContent(int userId, String password ,String macAddress) async {
     try {
       final content = await xml_rpc.call(
-        Uri.parse('https://$_baseUrl/xmlrpc/2/object'),
+        Uri.parse('${baseUrl}xmlrpc/2/object'),
         'execute_kw',
         [
-          _database,
+          dbName,
           userId,
           password,
           'restaurant.display.line',
@@ -121,8 +131,6 @@ class AuthProvider with ChangeNotifier {
     await prefs.setInt('user_id', userId);
     await prefs.setString('username', username);
     await prefs.setString('password', password);
-    await prefs.setString('base_url', _baseUrl);
-    await prefs.setString('database', _database);
     await prefs.setString('device_id', macAddress);
   }
   Future<void> logout() async {

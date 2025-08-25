@@ -1,8 +1,8 @@
 import 'package:advertising_screen/provider/handle_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'login_screen.dart';
 import 'display_screen.dart';
+import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -50,6 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (authProvider.isAuthenticated) {
+      print("gggg");
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const DisplayScreen()),
       );

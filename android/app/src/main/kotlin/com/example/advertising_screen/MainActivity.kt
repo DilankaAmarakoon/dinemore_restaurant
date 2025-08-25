@@ -91,14 +91,12 @@ class MainActivity: FlutterActivity() {
                 }
                 return true
             }
-
             // Method 2: HOME button (Common on H96 MAX remotes)
             KeyEvent.KEYCODE_HOME -> {
                 Log.d(TAG, "HOME button pressed - opening launcher selector")
                 showLauncherSelector()
                 return true
             }
-
             // Method 3: Mouse/OK button (Center button on H96 MAX remote)
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
                 Log.d(TAG, "CENTER/OK button pressed - opening launcher selector")
