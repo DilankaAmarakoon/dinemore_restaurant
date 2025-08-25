@@ -49,7 +49,7 @@ class _MyAppState extends State<MyApp> {
           builder: (context, authProvider, child) {
             // Now we can safely access the AuthProvider
             final isLandscape = authProvider.orientationMode;
-            print("isLandscape,,,$isLandscape ");
+            print("isLandscape,,,$isLandscape  ");
 
             if (isLandscape == "landscape") {
               // Landscape mode - normal app layout
