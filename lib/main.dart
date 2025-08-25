@@ -29,7 +29,6 @@ class MyApp extends StatefulWidget {
   @override
   State<MyApp> createState() => _MyAppState();
 }
-
 class _MyAppState extends State<MyApp> {
   @override
   void initState() {
@@ -50,7 +49,7 @@ class _MyAppState extends State<MyApp> {
           builder: (context, authProvider, child) {
             // Now we can safely access the AuthProvider
             final isLandscape = authProvider.orientationMode;
-            print("isLandscape,,,$isLandscape");
+            print("isLandscape,,,$isLandscape ");
 
             if (isLandscape == "landscape") {
               // Landscape mode - normal app layout
